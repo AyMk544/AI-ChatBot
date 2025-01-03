@@ -1,7 +1,7 @@
 "use server";
 import axios from "axios";
 
-async function sendPostRequest(prompt: string, threadId: string) {
+export async function getResponse(prompt: string, threadId: string) {
   const url = "http://127.0.0.1:8000/api/process-prompt";
 
   const requestBody = {

@@ -8,6 +8,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import START, MessagesState, StateGraph
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from dotenv import load_dotenv
+from fastapi.middleware.cors import CORSMiddleware
 
 class PromptRequest(BaseModel):
     prompt: str
@@ -18,6 +19,13 @@ class PromptResponse(BaseModel):
     status: str = "success"
 
 api = FastAPI()
+api.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 load_dotenv()
 MODEL_NAME = "meta.llama3-8b-instruct-v1:0"
@@ -105,6 +113,6 @@ async def process_prompt(request: PromptRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@api.get("/health")
+@api.get("/")
 async def health_check():
     return {"status": "healthy"}

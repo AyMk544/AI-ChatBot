@@ -1,6 +1,5 @@
 "use client";
 
-import { useChat } from "ai/react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,39 +11,62 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import axios from "axios";
+import { getResponse } from "@/server/actions";
+
+// Define a type for our messages
+type Message = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+};
 
 export default function ChatForm() {
-  const { messages, input, handleInputChange, handleSubmit } = useChat();
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // DON'T USE USEEFFECT, CALL IT WHEN FORM IS SUBMITTED
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     try {
-  //       const response = await fetch("http://127.0.0.1:8000/api/process-prompt");
-  //       const result = await response.json();
-  //       // setData(result.message);
-  //     } catch (error) {
-  //       console.error("Error fetching data:", error);
-  //     }
-  //   };
-
-  //   fetchData();
-  // }, []);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInput(e.target.value);
+  };
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!input.trim()) return;
+
     setIsLoading(true);
-    await handleSubmit(e);
+
+    // Add user message immediately
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: input,
+    };
+    setMessages((prev) => [...prev, userMessage]);
+
+    try {
+      const response = await getResponse(input, "abc123");
+
+      // Add assistant message after receiving response
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: response.response,
+      };
+      setMessages((prev) => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error("Error getting response:", error);
+      // Optionally handle error in UI
+    }
+
     setIsLoading(false);
+    setInput(""); // Clear input after sending
   };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
-      <Card className="w-full max-w-2xl">
+      <Card className="w-full max-w-6xl">
         <CardHeader>
-          <CardTitle>AI Chatbot</CardTitle>
+          <CardTitle className="text-2xl">AI Parrot🦜</CardTitle>
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-[60vh] pr-4">
@@ -56,10 +78,10 @@ export default function ChatForm() {
                 }`}
               >
                 <span
-                  className={`inline-block p-2 rounded-lg ${
+                  className={`inline-block p-2 rounded-lg max-w-2xl ${
                     m.role === "user"
                       ? "bg-blue-500 text-white"
-                      : "bg-gray-200 text-black"
+                      : "bg-green-300 text-black"
                   }`}
                 >
                   {m.content}
